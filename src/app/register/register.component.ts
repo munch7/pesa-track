@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../shared/auth.service';
@@ -8,18 +8,18 @@ import { Router } from '@angular/router';
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './register.component.html'
+  templateUrl: './register.component.html',
+  styleUrl: './register.component.css'
 })
 export class RegisterComponent {
-  name = '';
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   email = '';
   password = '';
-  location = '';
   confirmPassword = '';
   errorMessage = '';
   successMessage = '';
-
-  constructor(private authService: AuthService, private router: Router) {}
 
   register() {
     this.errorMessage = '';
@@ -30,7 +30,7 @@ export class RegisterComponent {
       return;
     }
 
-    this.authService.register(this.name, this.email, this.location, this.password)
+    this.authService.register(this.email, this.password)
     .then(userCredential => {
       this.successMessage = 'Registration successful!, Redirecting ...';
       setTimeout(() => this.router.navigate(['/login']), 2000);

@@ -1,8 +1,7 @@
 <div class="section">
+  <h2>Signup</h2>
   <form (ngSubmit)="register()">
-    <input [(ngModel)]="name" name="name" placeholder="Name" required />
     <input [(ngModel)]="email" name="email" placeholder="Email" required />
-    <input [(ngModel)]="location" name="location" placeholder="Location" required />
     <input [(ngModel)]="password" name="password" placeholder="Password" type="password" required />
     <input [(ngModel)]="confirmPassword" name="confirmpassword" placeholder="Confirm Password" type="password" required />
     <button type="submit">Sign up</button>

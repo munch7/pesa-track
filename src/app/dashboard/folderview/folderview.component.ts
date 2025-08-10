@@ -5,7 +5,15 @@ import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { Firestore, addDoc, collection, collectionData } from '@angular/fire/firestore';
+import { 
+  Firestore, 
+  doc,
+  deleteDoc,
+  addDoc, 
+  collection, 
+  collectionData, 
+  updateDoc
+} from '@angular/fire/firestore';
 import { Auth, user } from '@angular/fire/auth';
 
 @Component({
@@ -15,12 +23,15 @@ import { Auth, user } from '@angular/fire/auth';
     FormsModule,
     RouterModule,
   ],
-  templateUrl: './folderview.component.html'
+  templateUrl: './folderview.component.html',
+  styleUrl: './folderview.component.css'
 })
+
 export class FolderviewComponent implements OnInit {
   private afs = inject(Firestore);
   private auth = inject(Auth);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   userId = '';
   folderId = '';
@@ -29,6 +40,13 @@ export class FolderviewComponent implements OnInit {
   amount: number | null = null;
   note = '';
   isToday = false;
+  
+  editingEntryId: string | null = null;
+  editName = '';
+  editAmount: number | null = null;
+  editNote = '';
+  folderTotals: { [key: string]: number } = {};
+
   
   ngOnInit() {
     this.folderId = this.route.snapshot.paramMap.get('folderId')!;
@@ -52,6 +70,12 @@ export class FolderviewComponent implements OnInit {
         });
       }
     });
+    this.getTotalAmount();
+  }
+
+  getTotalAmount(): number {
+    if (!this.entries) return 0;
+    return this.entries.reduce((sum, e) => sum + (+e.amount || 0), 0);
   }
 
   addEntry() {
@@ -70,5 +94,39 @@ export class FolderviewComponent implements OnInit {
       this.amount = null ;
       this.note = '';
     });
+  }
+
+  deleteEntry(entryId: string) {
+    if (!this.userId || !this.folderId) return;
+
+    const entryDoc = doc(this.afs, `users/${this.userId}/folders/${this.folderId}/entries/${entryId}`);
+    deleteDoc(entryDoc).catch(err => console.error('Delete Failed:', err));
+  }
+
+  startEditing(entry: any) {
+    this.editingEntryId = entry.id;
+    this.editName = entry.name;
+    this.editAmount = entry.amount;
+    this.editNote = entry.note;
+  }
+
+  cancelEditing() {
+    this.editingEntryId = null;
+  }
+
+  saveEntry() {
+    if (!this.editingEntryId) return;
+    const entryDoc = doc(this.afs, `users/${this.userId}/folders/${this.folderId}/entries/${this.editingEntryId}`);
+    updateDoc(entryDoc, {
+      name: this.editName,
+      amount: this.editAmount,
+      note: this.editNote
+    }).then(() => {
+      this.editingEntryId = null;
+    }).catch(err => console.error('update failed:', err));
+  }
+
+  closeFolder() {
+    this.router.navigate(['/dashboard'])
   }
 }
