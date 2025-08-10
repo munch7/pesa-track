@@ -1,0 +1,22 @@
+<div class="section">
+    <h2>Welcome, {{ user?.name }}</h2>
+
+    <!-- <button (click)="goToSettings()">Account Settings</button> -->
+    <button (click)="logout()">Logout</button>
+
+    <hr>
+
+    <button (click)="createFolder()">Create New Folder</button>
+
+    <ul>
+    <li *ngFor="let folder of folders">
+        <a [routerLink]="['/dashboard/folder', folder.id]">
+        {{ folder.id }} - Total: {{ folderTotals[folder.id] || 0 }}
+        </a>
+    </li>
+    </ul>
+
+    <router-outlet></router-outlet>
+
+    <ng-template #loading>Loading entries...</ng-template>
+</div>

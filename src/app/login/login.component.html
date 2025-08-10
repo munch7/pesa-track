@@ -1,0 +1,18 @@
+<div class="section">
+  <form (ngSubmit)="login()" #entryForm="ngForm" class="form-container">
+    <input 
+      [(ngModel)]="email" 
+      name="email" 
+      placeholder="Email" 
+      required
+      #nameInput="ngModel"/>
+    <input 
+      [(ngModel)]="password" 
+      name="password" 
+      placeholder="Password" 
+      type="password" 
+      required
+      #nameInput="ngModel"/>
+    <button type="submit">Login</button>
+  </form>  
+</div>

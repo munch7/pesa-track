@@ -1,0 +1,23 @@
+<h3>Folder: {{ folderId }}</h3>
+
+<!-- Form only appears if today's folder -->
+<div *ngIf="isToday; else readOnly">
+  <form (ngSubmit)="addEntry()" #entryForm="ngForm">
+    <input [(ngModel)]="name" name="name" placeholder="Name" required />
+    <input [(ngModel)]="amount" name="amount" type="number" placeholder="Amount" required />
+    <input [(ngModel)]="note" name="note" placeholder="Note" required />
+    <button type="submit" [disabled]="entryForm.invalid">Add Entry</button>
+  </form>
+</div>
+
+<ng-template #readOnly>
+  <p><em>This folder is read-only. You can only add entries for today’s folder.</em></p>
+</ng-template>
+
+<hr />
+
+<ul>
+  <li *ngFor="let entry of entries">
+    {{ entry.name }} - {{ entry.amount }} - {{ entry.note }}
+  </li>
+</ul>
