@@ -49,7 +49,7 @@ export class FirestoreService {
     const user = this.auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
-    const entriesRef = collection(this.firestore, `${user.uid}${listId}/entries`);
+    const entriesRef = collection(this.firestore, `${user.uid}/${listId}/entries`);
     const q = query(entriesRef, orderBy('date', 'desc'));
     return collectionData(q, { idField: 'id' });
   }
