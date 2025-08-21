@@ -51,12 +51,21 @@ export class DashboardComponent implements OnInit {
   }
 
   loadFolders() {
+    console.log('DEBUG: loadFolders → Firestore instance:', this.afs);
+    console.log('DEBUG: user id:', this.user?.uid);
+  
     const foldersRef = collection(this.afs, `users/${this.user.uid}/folders`);
+    console.log('DEBUG: foldersRef:', foldersRef);
+  
     collectionData(foldersRef, { idField: 'id' })
       .pipe(map((folders) => folders.map((f: any) => ({ id: f.id }))))
-      .subscribe((folders) => {
-        this.folders = folders;
-        this.getFolderTotals();
+      .subscribe({
+        next: (folders) => {
+          console.log('DEBUG: folders received:', folders);
+          this.folders = folders;
+          this.getFolderTotals();
+        },
+        error: (err) => console.error('🔥 Firestore error in loadFolders:', err)
       });
   }
 
@@ -75,15 +84,23 @@ export class DashboardComponent implements OnInit {
 
   getFolderTotals() {
     for (let folder of this.folders) {
+      console.log('DEBUG: getFolderTotals → folder:', folder.id);
+  
       const entriesRef = collection(
         this.afs,
         `users/${this.user.uid}/folders/${folder.id}/entries`
       );
-      collectionData(entriesRef).subscribe((entries: any[]) => {
-        this.folderTotals[folder.id] = entries.reduce(
-          (sum, entry) => sum + (+entry.amount || 0),
-          0
-        );
+      console.log('DEBUG: entriesRef:', entriesRef);
+  
+      collectionData(entriesRef).subscribe({
+        next: (entries: any[]) => {
+          console.log(`DEBUG: entries for ${folder.id}:`, entries);
+          this.folderTotals[folder.id] = entries.reduce(
+            (sum, entry) => sum + (+entry.amount || 0),
+            0
+          );
+        },
+        error: (err) => console.error(`🔥 Firestore error in getFolderTotals for ${folder.id}:`, err)
       });
     }
   }
