@@ -70,7 +70,7 @@ export class DashboardComponent implements OnInit {
     console.log('DEBUG: foldersRef:', foldersRef);
 
     collectionData(foldersRef, { idField: 'id' })
-      .pipe(map((folders) => folders.map((f: any) => ({ id: f.id }))))
+      .pipe(map(folders => folders.map((f: any) => ({ id: f.id }))))
       .subscribe({
         next: (folders) => {
           console.log('DEBUG: folders received:', folders);
