@@ -1,5 +1,8 @@
 <div class="section">
-    <h2>Welcome, {{ user?.name || user?.displayName || user?.email }}</h2>
+    <h2>Welcome, {{ userData?.displayName || authUser?.email }}</h2>
+
+    <p>Email: {{ authUser?.email }}</p>
+    <p>User ID: {{ authUser?.uid }}</p>
 
     <!-- <button (click)="goToSettings()">Account Settings</button> -->
     <button (click)="logout()">Logout</button>
