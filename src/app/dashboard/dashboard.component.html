@@ -15,7 +15,7 @@
 
     <router-outlet></router-outlet>
 
-    <ul *ngIf="user && !folderOpen">
+    <ul *ngIf="authUser && !folderOpen">
         <h2>List of Folders</h2>
         <li *ngFor="let folder of folders">
             <a [routerLink]="['/dashboard/folder', folder.id]">
