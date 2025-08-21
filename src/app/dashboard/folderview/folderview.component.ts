@@ -1,10 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
 import { 
   Firestore, 
   doc,
@@ -15,19 +12,16 @@ import {
   updateDoc
 } from '@angular/fire/firestore';
 import { Auth, user } from '@angular/fire/auth';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-folderview',
-  imports: [
-    CommonModule, 
-    FormsModule,
-    RouterModule,
-  ],
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './folderview.component.html',
   styleUrl: './folderview.component.css'
 })
-
-export class FolderviewComponent implements OnInit {
+export class FolderviewComponent implements OnInit, OnDestroy {
   private afs = inject(Firestore);
   private auth = inject(Auth);
   private route = inject(ActivatedRoute);
@@ -45,11 +39,12 @@ export class FolderviewComponent implements OnInit {
   editName = '';
   editAmount: number | null = null;
   editNote = '';
-  folderTotals: { [key: string]: number } = {};
 
-  
+  private entriesSub?: Subscription;
+
   ngOnInit() {
     this.folderId = this.route.snapshot.paramMap.get('folderId')!;
+
     const todayStr = new Date().toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
@@ -64,13 +59,16 @@ export class FolderviewComponent implements OnInit {
           this.afs,
           `users/${user.uid}/folders/${this.folderId}/entries`
         );
-        collectionData(entriesRef, { idField: 'id' })
-        .subscribe((entries) => {
-          this.entries = entries;
-        });
+        this.entriesSub = collectionData(entriesRef, { idField: 'id' })
+          .subscribe((entries) => {
+            this.entries = entries;
+          });
       }
     });
-    this.getTotalAmount();
+  }
+
+  ngOnDestroy() {
+    this.entriesSub?.unsubscribe();
   }
 
   getTotalAmount(): number {
@@ -79,6 +77,8 @@ export class FolderviewComponent implements OnInit {
   }
 
   addEntry() {
+    if (!this.userId || !this.folderId) return;
+
     const entry = {
       name: this.name,
       amount: this.amount,
@@ -91,7 +91,7 @@ export class FolderviewComponent implements OnInit {
     );
     addDoc(entriesRef, entry).then(() => {
       this.name = '';
-      this.amount = null ;
+      this.amount = null;
       this.note = '';
     });
   }
@@ -123,10 +123,10 @@ export class FolderviewComponent implements OnInit {
       note: this.editNote
     }).then(() => {
       this.editingEntryId = null;
-    }).catch(err => console.error('update failed:', err));
+    }).catch(err => console.error('Update failed:', err));
   }
 
   closeFolder() {
-    this.router.navigate(['/dashboard'])
+    this.router.navigate(['/dashboard']);
   }
 }
