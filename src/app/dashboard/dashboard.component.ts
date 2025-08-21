@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
-import { Auth, signOut, user } from '@angular/fire/auth';
+import { Auth, signOut, user, User } from '@angular/fire/auth';
 import {
   Firestore,
   collection,
@@ -26,37 +26,49 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  user: any;
+  /** Firebase Auth user */
+  authUser: User | null = null;
+
+  /** Firestore profile data */
+  userData: any;
+
   folders: any[] = [];
   folderTotals: { [key: string]: number } = {};
-
   folderOpen = false;
 
   ngOnInit() {
     // 🔹 Listen to logged-in user
     user(this.auth).subscribe(async (u) => {
       if (u) {
+        this.authUser = u; // ✅ always keep UID here
+
+        // load Firestore profile
         const userDocRef = doc(this.afs, `users/${u.uid}`);
         const snap = await getDoc(userDocRef);
-        this.user = snap.exists() ? snap.data() : { displayName: u.displayName, email: u.email };
+        this.userData = snap.exists()
+          ? snap.data()
+          : { displayName: u.displayName, email: u.email };
+
         this.loadFolders();
       }
     });
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
-      // Check if current URL has 'folder' segment
-      this.folderOpen = this.router.url.includes('/dashboard/folder');
-    });
+
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.folderOpen = this.router.url.includes('/dashboard/folder');
+      });
   }
 
   loadFolders() {
+    if (!this.authUser) return;
+
     console.log('DEBUG: loadFolders → Firestore instance:', this.afs);
-    console.log('DEBUG: user id:', this.user?.uid);
-  
-    const foldersRef = collection(this.afs, `users/${this.user.uid}/folders`);
+    console.log('DEBUG: user id:', this.authUser.uid);
+
+    const foldersRef = collection(this.afs, `users/${this.authUser.uid}/folders`);
     console.log('DEBUG: foldersRef:', foldersRef);
-  
+
     collectionData(foldersRef, { idField: 'id' })
       .pipe(map((folders) => folders.map((f: any) => ({ id: f.id }))))
       .subscribe({
@@ -70,28 +82,32 @@ export class DashboardComponent implements OnInit {
   }
 
   createFolder() {
+    if (!this.authUser) return;
+
     const dateStr = new Date().toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
 
-    const folderRef = doc(this.afs, `users/${this.user.uid}/folders/${dateStr}`);
+    const folderRef = doc(this.afs, `users/${this.authUser.uid}/folders/${dateStr}`);
     setDoc(folderRef, { created: new Date() }).then(() => {
       this.router.navigate(['/dashboard/folder', dateStr]);
     });
   }
 
   getFolderTotals() {
+    if (!this.authUser) return;
+
     for (let folder of this.folders) {
       console.log('DEBUG: getFolderTotals → folder:', folder.id);
-  
+
       const entriesRef = collection(
         this.afs,
-        `users/${this.user.uid}/folders/${folder.id}/entries`
+        `users/${this.authUser.uid}/folders/${folder.id}/entries`
       );
       console.log('DEBUG: entriesRef:', entriesRef);
-  
+
       collectionData(entriesRef).subscribe({
         next: (entries: any[]) => {
           console.log(`DEBUG: entries for ${folder.id}:`, entries);
@@ -100,16 +116,17 @@ export class DashboardComponent implements OnInit {
             0
           );
         },
-        error: (err) => console.error(`🔥 Firestore error in getFolderTotals for ${folder.id}:`, err)
+        error: (err) =>
+          console.error(`🔥 Firestore error in getFolderTotals for ${folder.id}:`, err),
       });
     }
   }
-  
+
   get todayFolderName(): string {
     return new Date().toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 
@@ -119,7 +136,7 @@ export class DashboardComponent implements OnInit {
 
   logout() {
     signOut(this.auth).then(() => {
-      this.router.navigate(['/login'])
+      this.router.navigate(['/login']);
     });
   }
 }
